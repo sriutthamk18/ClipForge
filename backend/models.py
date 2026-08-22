@@ -14,10 +14,22 @@ JobStatus = Literal[
 class ClipRequest(BaseModel):
     url: str
     aspect_ratio: Literal["9:16", "1:1", "4:5", "16:9"] = "9:16"
-    caption_style: Literal["bold_pop", "minimal_clean", "karaoke"] = "bold_pop"
     min_duration: int = Field(15, ge=5, le=180)
     max_duration: int = Field(60, ge=5, le=180)
     max_clips: int = Field(8, ge=1, le=10)
+    
+    # Caption styling
+    caption_effect: Literal["pop", "karaoke", "wave", "slide", "solid"] = "karaoke"
+    caption_color: Literal["neon", "pastel", "classic", "retro", "minimal", "vibrant"] = "neon"
+    caption_custom_color: Optional[str] = None
+    caption_font_size: int = Field(76, ge=20, le=150)
+    caption_bold: bool = False
+    caption_italic: bool = False
+    caption_outline_width: int = Field(2, ge=0, le=6)
+    caption_shadow: bool = True
+    caption_background: Literal["none", "box", "bar"] = "none"
+    caption_placement: Literal["top", "center", "bottom"] = "bottom"
+    
     burn_captions: bool = True
     track_faces: bool = True
 
@@ -31,7 +43,7 @@ class ClipResult(BaseModel):
     duration: float
     virality_score: int
     reasoning: str
-    file: Optional[str] = None  # relative download path, set once rendered
+    file: Optional[str] = None
 
 
 class Job(BaseModel):

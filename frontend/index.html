@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClipForge — Free AI Clip Cutter</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #101013;
+    --surface: #18181D;
+    --surface-2: #1F1F26;
+    --line: #2A2A32;
+    --text: #F3F3EF;
+    --muted: #8B8B95;
+    --pink: #FF3D71;
+    --amber: #FFC24B;
+    --cyan: #3DDBFF;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .mono { font-family: 'JetBrains Mono', monospace; }
+
+  header.hero {
+    padding: 28px 20px 22px;
+    border-bottom: 1px solid var(--line);
+    position: relative;
+    overflow: hidden;
+  }
+  .timeline-strip {
+    display: flex;
+    gap: 3px;
+    height: 5px;
+    margin-bottom: 22px;
+  }
+  .timeline-strip span {
+    flex: 1;
+    background: var(--line);
+    border-radius: 2px;
+  }
+  .timeline-strip span.hot {
+    background: linear-gradient(90deg, var(--pink), var(--amber));
+  }
+  .brand {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .brand h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 30px;
+    letter-spacing: -0.5px;
+    margin: 0;
+    text-transform: uppercase;
+  }
+  .brand .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--bg);
+    background: var(--amber);
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+  }
+  header.hero p.sub {
+    color: var(--muted);
+    margin: 10px 0 0;
+    font-size: 14.5px;
+    max-width: 46ch;
+    line-height: 1.5;
+  }
+
+  main { max-width: 640px; margin: 0 auto; padding: 22px 18px 80px; }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .panel-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+  input[type=url], input[type=text], input[type=number], input[type=color] {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 13px 14px;
+    color: var(--text);
+    font-size: 15px;
+    font-family: 'Inter', sans-serif;
+  }
+  input[type=color] { padding: 6px; height: 50px; }
+  input:focus { outline: 2px solid var(--pink); outline-offset: 1px; }
+  select {
+    width: 100%;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    color: var(--text);
+    padding: 11px;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13.5px;
+  }
+
+  .field { margin-bottom: 16px; }
+  .field-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: var(--text);
+  }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 9px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--muted);
+    font-size: 13.5px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+    transition: border-color .15s, color .15s, background .15s;
+  }
+  .chip.active {
+    border-color: var(--pink);
+    color: var(--text);
+    background: rgba(255,61,113,0.12);
+  }
+  .chip-row.toggles .chip {
+    flex: 1;
+    text-align: center;
+  }
+
+  button.primary {
+    width: 100%;
+    padding: 15px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(90deg, var(--pink), #FF6B4B);
+    color: #17070C;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  button.primary:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.primary:active:not(:disabled) { transform: translateY(1px); }
+
+  details.advanced { margin-top: 4px; }
+  details.advanced summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  details.advanced .field { margin-top: 14px; }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--amber);
+    animation: pulse 1.1s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.35;} }
+  .error-box {
+    border: 1px solid #5A2331;
+    background: rgba(255,61,113,0.08);
+    color: #FFAFC2;
+    padding: 12px 14px;
+    border-radius: 10px;
+    font-size: 13.5px;
+  }
+
+  .results-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    margin: 26px 0 14px;
+  }
+  .results-head h2 {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 18px; text-transform: uppercase; margin: 0;
+  }
+  .results-head span { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
+
+  .clip-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .clip-top { display: flex; gap: 12px; align-items: flex-start; }
+  .rank {
+    font-family: 'Archivo Black', sans-serif;
+    font-size: 22px;
+    color: var(--line);
+    -webkit-text-stroke: 1px var(--muted);
+    min-width: 34px;
+  }
+  .clip-info { flex: 1; min-width: 0; }
+  .clip-title { font-weight: 700; font-size: 15.5px; margin: 0 0 4px; }
+  .clip-hook { color: var(--muted); font-size: 13px; margin: 0 0 10px; line-height: 1.4; }
+  .clip-meta {
+    display: flex; gap: 12px; flex-wrap: wrap;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px; color: var(--muted); margin-bottom: 10px;
+  }
+
+  .meter-row { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .meter-track {
+    flex: 1; height: 8px; background: var(--surface-2);
+    border-radius: 5px; overflow: hidden;
+  }
+  .meter-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--cyan), var(--amber) 60%, var(--pink));
+    border-radius: 5px;
+    width: 0%;
+    transition: width 0.6s ease;
+  }
+  .meter-score { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 700; min-width: 34px; text-align: right; }
+
+  a.download-btn {
+    display: block; text-align: center;
+    padding: 11px; border-radius: 9px;
+    background: var(--surface-2); border: 1px solid var(--line);
+    color: var(--text); text-decoration: none;
+    font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600;
+  }
+  a.download-btn:active { background: var(--line); }
+
+  footer {
+    text-align: center; color: var(--muted); font-size: 12px;
+    padding: 30px 20px; font-family: 'JetBrains Mono', monospace;
+  }
+  footer code { color: var(--amber); }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="timeline-strip" id="timelineStrip"></div>
+  <div class="brand">
+    <h1>ClipForge</h1>
+    <span class="tag">FREE · GEMINI-POWERED</span>
+  </div>
+  <p class="sub">Drop a link. ClipForge finds the moments worth clipping, ranks them by
+  virality, and renders them in your aspect ratio with captions burned in.</p>
+</header>
+
+<main>
+
+  <div class="panel">
+    <div class="panel-label">01 · Source</div>
+    <div class="field">
+      <input type="url" id="videoUrl" placeholder="Paste a YouTube (or other platform) link…" />
+    </div>
+
+    <div class="panel-label" style="margin-top:18px;">02 · Output</div>
+
+    <div class="field">
+      <div class="field-title">Aspect ratio</div>
+      <div class="chip-row" id="aspectRow"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-title">Clip length</div>
+      <select id="durationSelect">
+        <option value="8,15">Snappy · 8–15s</option>
+        <option value="15,30" selected>Standard · 15–30s</option>
+        <option value="30,60">Story · 30–60s</option>
+        <option value="60,90">Deep dive · 60–90s</option>
+      </select>
+    </div>
+
+    <div class="panel-label" style="margin-top:18px;">03 · Captions</div>
+
+    <div class="field">
+      <div class="field-title">Text effect</div>
+      <div class="chip-row" id="effectRow"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-title">Color preset</div>
+      <div class="chip-row" id="colorRow"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-title">Custom color (optional)</div>
+      <input type="color" id="customColor" />
+    </div>
+
+    <div class="field">
+      <div class="field-title">Font size (px)</div>
+      <input type="number" id="fontSize" min="20" max="150" value="76" />
+    </div>
+
+    <div class="field">
+      <div class="field-title">Styling</div>
+      <div class="chip-row toggles" id="styleToggles"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-title">Outline width</div>
+      <select id="outlineWidth">
+        <option value="0">None</option>
+        <option value="2" selected>Thin</option>
+        <option value="4">Medium</option>
+        <option value="6">Thick</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <div class="field-title">Shadow</div>
+      <div class="chip-row toggles" id="shadowRow"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-title">Background</div>
+      <div class="chip-row" id="backgroundRow"></div>
+    </div>
+
+    <div class="field">
+      <div class="field-title">Placement</div>
+      <div class="chip-row" id="placementRow"></div>
+    </div>
+
+    <details class="advanced">
+      <summary>Advanced settings</summary>
+      <div class="field">
+        <div class="field-title">Face tracking</div>
+        <div class="chip-row" id="trackRow"></div>
+      </div>
+      <div class="field">
+        <div class="field-title">Number of clips</div>
+        <select id="maxClipsSelect">
+          <option value="4">4 clips</option>
+          <option value="6">6 clips</option>
+          <option value="8" selected>8 clips</option>
+          <option value="10">10 clips</option>
+        </select>
+      </div>
+      <div class="field">
+        <div class="field-title">Backend URL (leave blank if hosted on same domain)</div>
+        <input type="text" id="apiBase" placeholder="https://your-backend.example.com" />
+      </div>
+    </details>
+
+    <button class="primary" id="submitBtn">Find & cut clips</button>
+  </div>
+
+  <div id="statusPanel"></div>
+  <div id="resultsSection"></div>
+
+</main>
+
+<footer>
+  Bring your own Gemini API key on the server via <code>GEMINI_API_KEY</code>. No accounts, no watermarks, no paywall.
+</footer>
+
+<script>
+const ASPECTS = ["9:16", "1:1", "4:5", "16:9"];
+const EFFECTS = ["pop", "karaoke", "wave", "slide", "solid"];
+const COLORS = {
+  "neon": "Neon",
+  "pastel": "Pastel",
+  "classic": "Classic",
+  "retro": "Retro Gold",
+  "minimal": "Minimal",
+  "vibrant": "Vibrant",
+};
+const BACKGROUNDS = ["none", "box", "bar"];
+const PLACEMENTS = ["top", "center", "bottom"];
+const STYLES = [{name: "bold", label: "Bold"}, {name: "italic", label: "Italic"}];
+const SHADOWS = [{v: true, l: "On"}, {v: false, l: "Off"}];
+
+let selectedAspect = "9:16";
+let selectedEffect = "karaoke";
+let selectedColor = "neon";
+let selectedBold = false;
+let selectedItalic = false;
+let selectedShadow = true;
+let selectedBackground = "none";
+let selectedPlacement = "bottom";
+let trackFaces = true;
+let pollTimer = null;
+
+function apiBase() {
+  const v = document.getElementById('apiBase').value.trim();
+  return v ? v.replace(/\/$/, '') : '';
+}
+
+function renderChips() {
+  const aspectRow = document.getElementById('aspectRow');
+  aspectRow.innerHTML = '';
+  ASPECTS.forEach(a => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (a === selectedAspect ? ' active' : '');
+    chip.textContent = a;
+    chip.onclick = () => { selectedAspect = a; renderChips(); };
+    aspectRow.appendChild(chip);
+  });
+
+  const effectRow = document.getElementById('effectRow');
+  effectRow.innerHTML = '';
+  EFFECTS.forEach(e => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (e === selectedEffect ? ' active' : '');
+    chip.textContent = e.charAt(0).toUpperCase() + e.slice(1);
+    chip.onclick = () => { selectedEffect = e; renderChips(); };
+    effectRow.appendChild(chip);
+  });
+
+  const colorRow = document.getElementById('colorRow');
+  colorRow.innerHTML = '';
+  Object.entries(COLORS).forEach(([k, label]) => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (k === selectedColor ? ' active' : '');
+    chip.textContent = label;
+    chip.onclick = () => { selectedColor = k; renderChips(); };
+    colorRow.appendChild(chip);
+  });
+
+  const styleToggles = document.getElementById('styleToggles');
+  styleToggles.innerHTML = '';
+  STYLES.forEach(s => {
+    const chip = document.createElement('div');
+    const isActive = s.name === 'bold' ? selectedBold : selectedItalic;
+    chip.className = 'chip' + (isActive ? ' active' : '');
+    chip.textContent = s.label;
+    chip.onclick = () => {
+      if (s.name === 'bold') selectedBold = !selectedBold;
+      else selectedItalic = !selectedItalic;
+      renderChips();
+    };
+    styleToggles.appendChild(chip);
+  });
+
+  const shadowRow = document.getElementById('shadowRow');
+  shadowRow.innerHTML = '';
+  SHADOWS.forEach(opt => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (opt.v === selectedShadow ? ' active' : '');
+    chip.textContent = opt.l;
+    chip.onclick = () => { selectedShadow = opt.v; renderChips(); };
+    shadowRow.appendChild(chip);
+  });
+
+  const backgroundRow = document.getElementById('backgroundRow');
+  backgroundRow.innerHTML = '';
+  BACKGROUNDS.forEach(b => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (b === selectedBackground ? ' active' : '');
+    chip.textContent = b.charAt(0).toUpperCase() + b.slice(1);
+    chip.onclick = () => { selectedBackground = b; renderChips(); };
+    backgroundRow.appendChild(chip);
+  });
+
+  const placementRow = document.getElementById('placementRow');
+  placementRow.innerHTML = '';
+  PLACEMENTS.forEach(p => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (p === selectedPlacement ? ' active' : '');
+    chip.textContent = p.charAt(0).toUpperCase() + p.slice(1);
+    chip.onclick = () => { selectedPlacement = p; renderChips(); };
+    placementRow.appendChild(chip);
+  });
+
+  const trackRow = document.getElementById('trackRow');
+  trackRow.innerHTML = '';
+  [{v:true,l:'Follow speaker'},{v:false,l:'Static center'}].forEach(opt => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (opt.v === trackFaces ? ' active' : '');
+    chip.textContent = opt.l;
+    chip.onclick = () => { trackFaces = opt.v; renderChips(); };
+    trackRow.appendChild(chip);
+  });
+}
+
+function renderTimelineStrip() {
+  const strip = document.getElementById('timelineStrip');
+  strip.innerHTML = '';
+  for (let i = 0; i < 28; i++) {
+    const seg = document.createElement('span');
+    if (i === 6 || i === 18 || i === 24) seg.className = 'hot';
+    strip.appendChild(seg);
+  }
+}
+
+function setStatus(html) {
+  document.getElementById('statusPanel').innerHTML = html;
+}
+
+async function submitJob() {
+  const url = document.getElementById('videoUrl').value.trim();
+  if (!url) { setStatus('<div class="error-box">Paste a video link first.</div>'); return; }
+
+  const [minD, maxD] = document.getElementById('durationSelect').value.split(',').map(Number);
+  const maxClips = Number(document.getElementById('maxClipsSelect').value);
+  const fontSize = parseInt(document.getElementById('fontSize').value) || 76;
+  const outlineWidth = parseInt(document.getElementById('outlineWidth').value) || 2;
+  const customColor = document.getElementById('customColor').value;
+
+  document.getElementById('submitBtn').disabled = true;
+  document.getElementById('resultsSection').innerHTML = '';
+  setStatus(`<div class="panel status-row"><span class="dot"></span> Queuing job…</div>`);
+
+  try {
+    const res = await fetch(`${apiBase()}/api/clip`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url,
+        aspect_ratio: selectedAspect,
+        caption_effect: selectedEffect,
+        caption_color: selectedColor,
+        caption_custom_color: customColor || null,
+        caption_font_size: fontSize,
+        caption_bold: selectedBold,
+        caption_italic: selectedItalic,
+        caption_outline_width: outlineWidth,
+        caption_shadow: selectedShadow,
+        caption_background: selectedBackground,
+        caption_placement: selectedPlacement,
+        min_duration: minD,
+        max_duration: maxD,
+        max_clips: maxClips,
+        burn_captions: true,
+        track_faces: trackFaces,
+      }),
+    });
+    if (!res.ok) throw new Error(`Server responded ${res.status}`);
+    const data = await res.json();
+    pollJob(data.job_id);
+  } catch (err) {
+    setStatus(`<div class="error-box">Couldn't start the job: ${err.message}. Check the backend URL / that the server is running.</div>`);
+    document.getElementById('submitBtn').disabled = false;
+  }
+}
+
+async function pollJob(jobId) {
+  clearInterval(pollTimer);
+  pollTimer = setInterval(async () => {
+    try {
+      const res = await fetch(`${apiBase()}/api/jobs/${jobId}`);
+      if (!res.ok) throw new Error(`Server responded ${res.status}`);
+      const job = await res.json();
+      renderJob(job);
+      if (job.status === 'done' || job.status === 'error') {
+        clearInterval(pollTimer);
+        document.getElementById('submitBtn').disabled = false;
+      }
+    } catch (err) {
+      clearInterval(pollTimer);
+      setStatus(`<div class="error-box">Lost connection to the job: ${err.message}</div>`);
+      document.getElementById('submitBtn').disabled = false;
+    }
+  }, 2500);
+}
+
+function renderJob(job) {
+  if (job.status === 'error') {
+    setStatus(`<div class="error-box"><strong>Failed:</strong> ${job.error || 'Unknown error'}</div>`);
+    return;
+  }
+  if (job.status !== 'done') {
+    setStatus(`<div class="panel status-row"><span class="dot"></span> ${job.progress_message}</div>`);
+  } else {
+    setStatus(`<div class="panel status-row" style="color:var(--amber);">✓ ${job.clips.length} clips ready — ranked by virality score</div>`);
+  }
+
+  if (job.clips && job.clips.length) {
+    const wrap = document.getElementById('resultsSection');
+    wrap.innerHTML = `<div class="results-head"><h2>Ranked clips</h2><span>${job.source_title || ''}</span></div>`;
+    job.clips.forEach((clip, i) => {
+      const card = document.createElement('div');
+      card.className = 'clip-card';
+      card.innerHTML = `
+        <div class="clip-top">
+          <div class="rank mono">${String(i + 1).padStart(2, '0')}</div>
+          <div class="clip-info">
+            <p class="clip-title">${escapeHtml(clip.title)}</p>
+            <p class="clip-hook">"${escapeHtml(clip.hook)}"</p>
+            <div class="clip-meta">
+              <span>${clip.duration}s</span>
+              <span>${fmtTime(clip.start)}–${fmtTime(clip.end)}</span>
+            </div>
+            <div class="meter-row">
+              <div class="meter-track"><div class="meter-fill" data-score="${clip.virality_score}"></div></div>
+              <div class="meter-score mono">${clip.virality_score}</div>
+            </div>
+            ${clip.file ? `<a class="download-btn" href="${apiBase()}${clip.file}" download>Download clip</a>` : ''}
+          </div>
+        </div>
+      `;
+      wrap.appendChild(card);
+    });
+    requestAnimationFrame(() => {
+      document.querySelectorAll('.meter-fill').f
